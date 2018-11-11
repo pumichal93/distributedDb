@@ -1,14 +1,14 @@
 ﻿
 <?php
-include ("config.php");
-$k = $_GET["k"]; 
+include "query-functions.php";
+$k = $_GET["k"];
 
-$var = mysqli_connect("$localhost","$user","$password","$db") or die ("connect error");
-$sql = "delete from tovar where id = $k";
-
-$res = mysqli_query($var,$sql) or die ("registration error");
-echo "<font color=\"black\"><br><strong>Vymazanie prebehlo úspešne </strong>";
-echo "";
+$where = [
+    'where' => [
+        '0' => ['kod', $k]
+    ]
+];
+removeRowQuery("tovar", $where);
 header('Refresh: 3; url=index.php?menu=8');
 ?>
 

@@ -34,7 +34,7 @@ echo "<tr>
     <td width='200'bgcolor='#FFFFee' height='32'>Vyrobca<b> ".$vyrobca."</b></td>
     <td width='300'bgcolor='#FFFFee' height='32'>popis <b>".$popis." </b></td>
     <td width='100'bgcolor='#FFFFee' height='32'>farba <b>".$farba."</b></td>
-    <td width='100' color='ff0000' bgcolor='#FFFFee' height='32'><b><a href='zmazanietov.php?k=".$id."'>x</b></a></td>
+    <td width='100' color='ff0000' bgcolor='#FFFFee' height='32'><b><a href='zmazanietov.php?k=".$kod."'>x</b></a></td>
   </tr>   
   <tr>
    <td width='200'bgcolor='#000000' height='1'></td>

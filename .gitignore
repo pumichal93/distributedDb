@@ -1,3 +1,5 @@
+config.php
+nodes.php
 vendor/*
 tovar_error.log
 .idea
