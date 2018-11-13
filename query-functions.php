@@ -87,16 +87,15 @@ function removeRowQuery($table, $data) {
                     logRemoteQuery($node, $local_conn->getLastQuery());
                 }
                 else {
-
-                }
-                //if ($db->ping()) {
+                    $db = new MysqliDb($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
                     foreach ($data['where'] as $w) {
-                        count($w) < 3 ? $local_conn->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
+                        count($w) < 3 ? $db->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
                     }
                     $id = $db->delete($table);
                     if ($id == -1) {
 
                     }
+                }
             }
         }
     }
