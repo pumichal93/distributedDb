@@ -10,7 +10,7 @@
 <?php
 echo "<table border='0' cellpadding='0' cellspacing='0' style='border-collapse: collapse' bordercolor='#111111' width='700'>";
 include ("config.php");   
-$var = mysqli_connect("$localhost","$user","$password","$db") or die ("connect error");
+$var = mysqli_connect("$host","$user","$password","$db") or die ("connect error");
 $sql = "select id,nazov,vyrobca,popis,kod,cena,farba from tovar";
 $result = mysqli_query($var, $sql) or exit ("chybny dotaz");
 //načítanie hodnôt do pola

@@ -1,7 +1,11 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
+/**
+ * Pred vykonani prikazu do DB skontroluje predosle zlzhane query na dany uzol
+ *
+ * @param $nodes
+ * @throws Exception
+ */
 function checkRemoteLogs($nodes) {
     include "nodes.php";
     $config_file = file_get_contents('log.json');
@@ -26,6 +30,8 @@ function checkRemoteLogs($nodes) {
 }
 
 /**
+ * Pri strate spojenie aspon s jednzm uzlom sa ulozi query poziadavka s danym uzlom.
+ *
  * @param MysqliDb $conn
  * @param $table
  * @param $query
@@ -45,7 +51,6 @@ function removeRowQuery($table, $data) {
 
     checkRemoteLogs($nodes);
     // osetrit offline lokal host
-    $local_host = $host;
     $local_conn = new MysqliDb($host, $user, $password, $db);
     // set where statements to remove query
     foreach ($data['where'] as $w) {
