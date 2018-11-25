@@ -8,17 +8,21 @@
  */
 function checkRemoteLogs($nodes) {
     include "nodes.php";
+    include "config.php";
     $config_file = file_get_contents('log.json');
     $config_data = json_decode($config_file, true);
     if (count($config_data['remote_action_log'])) {
         foreach ($config_data['remote_action_log'] as $node_host => $node_logs) {
             if (count($node_logs)) {
-                $conn = new MysqliDb($node_host, $nodes[$node_host]['user'], $nodes[$node_host]['password'], $nodes[$node_host]['database_name']);
-                // query log actions
+                $conn = isset($nodes[$node_host]) ?
+                    new mysqli($node_host, $nodes[$node_host]['user'], $nodes[$node_host]['password'], $nodes[$node_host]['database_name']) :
+                    new mysqli($node_host, $user, $password, $db);
+
                 if ($conn->ping()) {
+                    $conn_log = new MysqliDb($conn);
                     foreach ($node_logs as $key => $log_query) {
-                        $conn->rawQuery($log_query);
-                        if ($conn) {
+                        $conn_log->rawQuery($log_query);
+                        if ($conn_log) {
                             unset($config_data['remote_action_log'][$node_host][$key]);
                         }
                     }

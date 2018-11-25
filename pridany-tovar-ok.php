@@ -12,7 +12,7 @@ $insert_data = [
 ];
 
 addNewRow('tovar', $insert_data);
-header('Refresh: 3; url=index.php?menu=7');
+header('Refresh: 3; url=index.php?menu=8');
 ?>
 
 
