@@ -71,7 +71,10 @@ function removeRowQuery($table, $data) {
             $remote_access = true;
     }
 
-    if (!$conn->ping() || $id == -1) {
+    if (!$conn->ping() || $id === -1) {
+        var_dump($conn->ping());
+        var_dump($id);
+        die();
         // find if any remote node is online
         foreach ($nodes as $node => $conn_data) {
             $local_host = $node;
@@ -83,7 +86,7 @@ function removeRowQuery($table, $data) {
                     count($w) < 3 ? $local_conn->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
                 }
                 $id = $local_conn->delete($table);
-                if($id == 1) {
+                if($id) {
                     $remote_access = true;
                     break;
                 }
@@ -107,7 +110,7 @@ function removeRowQuery($table, $data) {
                     $id = $remote_conn->delete($table);
                 }
                 // check query execution
-                if (!$conn->ping() || $id == -1) {
+                if (!$conn->ping() || $id === -1) {
                     logRemoteQuery($remote_host, $local_conn->getLastQuery());
                 }
             }
