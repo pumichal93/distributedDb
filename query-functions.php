@@ -83,7 +83,7 @@ function removeRowQuery($table, $data) {
         }
     }
 
-    if ($local_host) {
+    if ($local_conn) {
         // insert row to other rows
         foreach ($nodes as $node => $conn_data) {
             if ($node != $local_conn) {
@@ -113,14 +113,14 @@ function addNewRow($table, $data) {
     checkRemoteLogs($nodes);
 	// osetrit offline lokal host
     $local_host = $host;
-	$local_conn = new MysqliDb($host, $user, $password, $db);
+	$local_conn = new MysqliDb($local_host, $user, $password, $db);
 	$local_result = $local_conn->insert($table, $data);
     if (!$local_result) {
         // find if any remote node is online
         $remote_access = false;
         foreach ($nodes as $node => $conn_data) {
             $local_host = $node;
-            $local_conn = new MysqliDb($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+            $local_conn = new MysqliDb($local_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
             $local_result = $local_conn->insert($table, $data);
             if($local_result) {
                 $config_file = file_get_contents('log.json');
@@ -138,12 +138,12 @@ function addNewRow($table, $data) {
 
     //if ($remote_access) {
         // insert row to other rows
-        foreach ($nodes as $node => $conn_data) {
-            if ($node != $local_conn) {
-                $db = new MysqliDb($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
-                $id = $db->insert($table, $data);
+        foreach ($nodes as $remote_host => $conn_data) {
+            if ($remote_host != $local_host) {
+                $remote_conn = new MysqliDb('25.58.60.58', $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+                $id = $remote_conn->insert($table, $data);
                 if (!$id) {
-                    logRemoteQuery($node, $local_conn->getLastQuery());
+                    logRemoteQuery($remote_host, $remote_conn->getLastQuery());
                 }
             }
         }
