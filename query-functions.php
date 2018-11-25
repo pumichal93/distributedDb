@@ -51,55 +51,60 @@ function removeRowQuery($table, $data) {
 
     checkRemoteLogs($nodes);
     // osetrit offline lokal host
-    $local_conn = new MysqliDb($host, $user, $password, $db);
-    // set where statements to remove query
-    foreach ($data['where'] as $w) {
-        count($w) < 3 ? $local_conn->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
-    }
-    $local_result = $local_conn->delete($table);
+    $remote_access = false;
+    $id = false;
+    $local_host = $host;
+    $conn = new mysqli($local_host, $user, $password, $db);
+    if ($conn->ping()) {
+        $local_conn = new MysqliDb($conn);
+        // set where statements to remove query
+        foreach ($data['where'] as $w) {
+            count($w) < 3 ? $local_conn->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
+        }
+        $id = $local_conn->delete($table);
 
-    if($local_conn == -1) {
+        if ($id == 1)
+            $remote_access = true;
+    }
+
+    if (!$conn->ping() || $id == -1) {
         // find if any remote node is online
-        $remote_access = false;
         foreach ($nodes as $node => $conn_data) {
             $local_host = $node;
-            $local_conn = new MysqliDb($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
-            // set where statements to remove query
-            foreach ($data['where'] as $w) {
-                count($w) < 3 ? $local_conn->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
-            }
-            $local_result = $local_conn->delete($table);
-            if($local_result) {
-                $config_file = file_get_contents('log.json');
-                $config_data = json_decode($config_file, true);
-                $config_data['remote_table'] = $node;
-                file_put_contents('log.json', $config_data);
-                $remote_access = true;
-                break;
+            $conn = new mysqli($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+            if ($conn->ping()) {
+                $local_conn = new MysqliDb($conn);
+                // set where statements to remove query
+                foreach ($data['where'] as $w) {
+                    count($w) < 3 ? $local_conn->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
+                }
+                $id = $local_conn->delete($table);
+                if($id == 1) {
+                    $remote_access = true;
+                    break;
+                }
             }
         }
-        if (!$remote_access) {
-            echo "connection fail";
+        if ($remote_access) {
+            logRemoteQuery($host, $local_conn->getLastQuery());
         }
     }
 
-    if ($local_conn) {
+    if ($remote_access) {
         // insert row to other rows
-        foreach ($nodes as $node => $conn_data) {
-            if ($node != $local_conn) {
-                $db = new mysqli($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
-                if ($db->connect_error) {
-                    logRemoteQuery($node, $local_conn->getLastQuery());
-                }
-                else {
-                    $db = new MysqliDb($node, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+        foreach ($nodes as $remote_host => $conn_data) {
+            if ($local_host != $remote_host) {
+                $conn = new mysqli($remote_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+                if ($conn->ping()) {
+                    $remote_conn = new MysqliDb($conn);
                     foreach ($data['where'] as $w) {
-                        count($w) < 3 ? $db->where($w[0], $w[1]) : $local_conn->where($w[0], $w[1], $w[2]);
+                        count($w) < 3 ? $db->where($w[0], $w[1]) : $remote_conn->where($w[0], $w[1], $w[2]);
                     }
-                    $id = $db->delete($table);
-                    if ($id == -1) {
-
-                    }
+                    $id = $remote_conn->delete($table);
+                }
+                // check query execution
+                if (!$conn->ping() || $id == -1) {
+                    logRemoteQuery($remote_host, $local_conn->getLastQuery());
                 }
             }
         }
@@ -113,40 +118,58 @@ function addNewRow($table, $data) {
     checkRemoteLogs($nodes);
 	// osetrit offline lokal host
     $local_host = $host;
-	$local_conn = new MysqliDb($local_host, $user, $password, $db);
-	$local_result = $local_conn->insert($table, $data);
-    if (!$local_result) {
-        // find if any remote node is online
-        $remote_access = false;
-        foreach ($nodes as $node => $conn_data) {
-            $local_host = $node;
-            $local_conn = new MysqliDb($local_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
-            $local_result = $local_conn->insert($table, $data);
-            if($local_result) {
-                $config_file = file_get_contents('log.json');
-                $config_data = json_decode($config_file, true);
-                $config_data['remote_table'] = $node;
-                file_put_contents('log.json', $config_data);
-                $remote_access = true;
-                break;
-            }
-        }
-        if (!$remote_access) {
-            echo "connection fail";
-        }
+    $conn = new mysqli($local_host, $user, $password, $db);
+    $remote_access = false;
+    $id = false;
+    // check local connection
+    if ($conn->ping()) {
+        $local_conn = new MysqliDb($conn);
+        $id = $local_conn->insert($table, $data);
+        if ($id)
+            $remote_access = true;
     }
 
-    //if ($remote_access) {
-        // insert row to other rows
-        foreach ($nodes as $remote_host => $conn_data) {
-            if ($remote_host != $local_host) {
-                $remote_conn = new MysqliDb($remote_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
-                $id = $remote_conn->insert($table, $data);
-                if (!$id) {
-                    logRemoteQuery($remote_host, $remote_conn->getLastQuery());
+    if (!$id || !$conn->ping()) {
+        $insert_errors_nodes = [];
+        // find if any remote node is online
+        foreach ($nodes as $node => $conn_data) {
+            $local_host = $node;
+            $conn = new mysqli($local_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+            if ($conn->ping()) {
+                $local_conn = new MysqliDb($conn);
+                $id = $local_conn->insert($table, $data);
+                // check if insert was successful
+                if ($id) {
+                    $remote_access = true;
+                    break;
                 }
             }
         }
-    //}
+
+        // log local query
+        if ($remote_access) {
+            logRemoteQuery($host, $local_conn->getLastQuery());
+        }
+    }
+
+    if ($remote_access) {
+        // insert row to other rows
+        foreach ($nodes as $remote_host => $conn_data) {
+            if ($remote_host != $local_host) {
+                $conn = new mysqli($remote_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+                if ($conn->ping()) {
+                    $remote_conn = new MysqliDb($conn);
+                    $id = $remote_conn->insert($table, $data);
+                    if (!$id) {
+                        logRemoteQuery($remote_host, $local_conn->getLastQuery());
+                    }
+                }
+                // node connection problem
+                else {
+                    logRemoteQuery($remote_host, $local_conn->getLastQuery());
+                }
+            }
+        }
+    }
 }
 ?>
