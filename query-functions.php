@@ -105,7 +105,7 @@ function removeRowQuery($table, $data) {
                 if ($conn->ping()) {
                     $remote_conn = new MysqliDb($conn);
                     foreach ($data['where'] as $w) {
-                        count($w) < 3 ? $db->where($w[0], $w[1]) : $remote_conn->where($w[0], $w[1], $w[2]);
+                        count($w) < 3 ? $remote_conn->where($w[0], $w[1]) : $remote_conn->where($w[0], $w[1], $w[2]);
                     }
                     $id = $remote_conn->delete($table);
                 }
