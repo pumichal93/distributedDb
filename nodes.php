@@ -1,10 +1,9 @@
 <?php
 $nodes = [
-	'25.58.60.58' => [
-		'user' => 'root',
+	'ip adress' => [
+		'user' => '',
 		'password' => '',
-		'database_name' => 'zaklad',
-		'name' => 'node1'
+		'database_name' => ''
 	]
 ];
 ?>
