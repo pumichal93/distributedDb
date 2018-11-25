@@ -140,7 +140,7 @@ function addNewRow($table, $data) {
         // insert row to other rows
         foreach ($nodes as $remote_host => $conn_data) {
             if ($remote_host != $local_host) {
-                $remote_conn = new MysqliDb('25.58.60.58', $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
+                $remote_conn = new MysqliDb($remote_host, $conn_data['user'], $conn_data['password'], $conn_data['database_name']);
                 $id = $remote_conn->insert($table, $data);
                 if (!$id) {
                     logRemoteQuery($remote_host, $remote_conn->getLastQuery());
