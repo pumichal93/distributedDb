@@ -72,9 +72,6 @@ function removeRowQuery($table, $data) {
     }
 
     if (!$conn->ping() || $id === -1) {
-        var_dump($conn->ping());
-        var_dump($id);
-        die();
         // find if any remote node is online
         foreach ($nodes as $node => $conn_data) {
             $local_host = $node;
