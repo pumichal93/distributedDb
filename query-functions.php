@@ -57,6 +57,7 @@ function removeRowQuery($table, $data) {
     // osetrit offline lokal host
     $remote_access = false;
     $id = false;
+    $last_query = "";
     $local_host = $host;
     $conn = new mysqli($local_host, $user, $password, $db);
     if ($conn->ping()) {
@@ -67,8 +68,10 @@ function removeRowQuery($table, $data) {
         }
         $id = $local_conn->delete($table);
 
-        if ($id == 1)
+        if ($id == 1) {
+            $last_query = $local_conn->getLastQuery();
             $remote_access = true;
+        }
     }
 
     if (!$conn->ping() || $id === -1) {
@@ -84,13 +87,14 @@ function removeRowQuery($table, $data) {
                 }
                 $id = $local_conn->delete($table);
                 if($id) {
+                    $last_query = $local_conn->getLastQuery();
                     $remote_access = true;
                     break;
                 }
             }
         }
         if ($remote_access) {
-            logRemoteQuery($host, $local_conn->getLastQuery());
+            logRemoteQuery($host, $last_query);
         }
     }
 
@@ -108,7 +112,7 @@ function removeRowQuery($table, $data) {
                 }
                 // check query execution
                 if (!$conn->ping() || $id === -1) {
-                    logRemoteQuery($remote_host, $local_conn->getLastQuery());
+                    logRemoteQuery($remote_host, $last_query);
                 }
             }
         }
@@ -125,12 +129,15 @@ function addNewRow($table, $data) {
     $conn = new mysqli($local_host, $user, $password, $db);
     $remote_access = false;
     $id = false;
+    $last_query = "";
     // check local connection
     if ($conn->ping()) {
         $local_conn = new MysqliDb($conn);
         $id = $local_conn->insert($table, $data);
-        if ($id)
+        if ($id) {
+            $last_query = $local_conn->getLastQuery();
             $remote_access = true;
+        }
     }
 
     if (!$id || !$conn->ping()) {
@@ -144,6 +151,7 @@ function addNewRow($table, $data) {
                 $id = $local_conn->insert($table, $data);
                 // check if insert was successful
                 if ($id) {
+                    $last_query = $local_conn->getLastQuery();
                     $remote_access = true;
                     break;
                 }
@@ -152,7 +160,7 @@ function addNewRow($table, $data) {
 
         // log local query
         if ($remote_access) {
-            logRemoteQuery($host, $local_conn->getLastQuery());
+            logRemoteQuery($host, $last_query);
         }
     }
 
@@ -165,12 +173,12 @@ function addNewRow($table, $data) {
                     $remote_conn = new MysqliDb($conn);
                     $id = $remote_conn->insert($table, $data);
                     if (!$id) {
-                        logRemoteQuery($remote_host, $local_conn->getLastQuery());
+                        logRemoteQuery($remote_host, $last_query);
                     }
                 }
                 // node connection problem
                 else {
-                    logRemoteQuery($remote_host, $local_conn->getLastQuery());
+                    logRemoteQuery($remote_host, $last_query);
                 }
             }
         }
