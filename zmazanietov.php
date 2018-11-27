@@ -1,11 +1,13 @@
 ﻿
 <?php
 include "query-functions.php";
-$k = $_GET["k"];
+$code = $_GET["k"];
+$node_id = $_GET["id"];
 
 $where = [
     'where' => [
-        '0' => ['kod', $k]
+        '0' => ['kod', $code ],
+        '1' => ['node_id', $node_id]
     ]
 ];
 removeRowQuery("tovar", $where);
